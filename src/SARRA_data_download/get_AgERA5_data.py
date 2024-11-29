@@ -22,59 +22,143 @@ def download_AgERA5_data(area, selected_area, variables, mode="month", query=dt.
 
     print("===== download_AgERA5_data =====")
 
-    # try:
-    if mode == "month":
-        query_year = query.year # int
-        query_month = query.strftime('%m') # str
+    try:
+        if mode == "month":
+            query_year = query.year # int
+            query_month = query.strftime('%m') # str
 
-        print("Mode 'month' acknowledged. Will download data for month",query.month,"/",query.year)
-        print("Please note that last available date on AgERA5 should be",dt.today()-datetime.timedelta(days=8))
+            print("Mode 'month' acknowledged. Will download data for month",query.month,"/",query.year)
+            print("Please note that last available date on AgERA5 should be",dt.today()-datetime.timedelta(days=8))
 
-    elif mode == "year":
-        query_year = query.year
+        elif mode == "year":
+            query_year = query.year
 
-        print("Mode 'year' acknowledged. Will download data for year",query.year)
-        print("Please note that last available date on AgERA5 should be",(dt.today()-datetime.timedelta(days=8)).date())
+            print("Mode 'year' acknowledged. Will download data for year",query.year)
+            print("Please note that last available date on AgERA5 should be",(dt.today()-datetime.timedelta(days=8)).date())
 
-    else :
-        raise Exception("The mode passed ("+mode+") is incorrect. Please use either 'month' or 'year'")
+        else :
+            raise Exception("The mode passed ("+mode+") is incorrect. Please use either 'month' or 'year'")
 
 
-    c = cdsapi.Client()
+        c = cdsapi.Client()
 
-    if not os.path.exists(os.path.join(save_path,"0_downloads/")):
-        os.makedirs(os.path.join(save_path,"0_downloads/"))
+        if not os.path.exists(os.path.join(save_path,"0_downloads/")):
+            os.makedirs(os.path.join(save_path,"0_downloads/"))
 
-    for variable in variables :
+        for variable in variables :
 
-        request = {
-                'format': 'zip',
-                'day': [
+            request = {
+                    'format': 'zip',
+                    'day': [
+                        '01', '02', '03',
+                        '04', '05', '06',
+                        '07', '08', '09',
+                        '10', '11', '12',
+                        '13', '14', '15',
+                        '16', '17', '18',
+                        '19', '20', '21',
+                        '22', '23', '24',
+                        '25', '26', '27',
+                        '28', '29', '30',
+                        '31',
+                    ],
+                    'year': [str(query_year)],
+                    'variable': variable[0],
+                    'statistic': variable[1],
+                    'area': area[selected_area],
+                    'version':'1_1',
+                }
+
+            if mode == "month":
+                zip_path = os.path.join(save_path,'0_downloads/AgERA5_'+selected_area+'_'+variable[0]+'_'+variable[1]+"_"+str(query_year)+'_'+query_month+'.zip')
+                request["month"] = query_month
+
+            if mode == "year": 
+                zip_path = os.path.join(save_path,'0_downloads/AgERA5_'+selected_area+'_'+variable[0]+'_'+variable[1]+"_"+str(query_year)+'.zip')
+                request["month"] = [
                     '01', '02', '03',
                     '04', '05', '06',
                     '07', '08', '09',
                     '10', '11', '12',
-                    '13', '14', '15',
-                    '16', '17', '18',
-                    '19', '20', '21',
-                    '22', '23', '24',
-                    '25', '26', '27',
-                    '28', '29', '30',
-                    '31',
-                ],
-                'year': [str(query_year)],
-                'variable': variable[0],
-                'statistic': variable[1],
-                'area': area[selected_area],
-                'version':'1_1',
-            }
+                ]
+
+            # la requête doit être adaptée pour cette variable
+            if variable[0] == "solar_radiation_flux" :
+                del request["statistic"]
+
+            c.retrieve(
+                'sis-agrometeorological-indicators',
+                request,
+                zip_path)
+
+            print("Download OK")
+    # capture exception and display error and year
+    except Exception as e:
+        print("/!\ Download NOT OK for year",query_year)
+        print(e)
+
+
+
+
+def download_AgERA5_data_alt(area, selected_area, variables, mode="month", query=dt.today(), save_path="../data/"):
+    """
+    If mode is "month", download all days of the month of the datetime.date passed in query.
+    If mode is "year", downloads all days of the year of the datetime.date passed in query.    
+    By default, is in mode "month", and query is the current date.
+    """
+
+    print("===== download_AgERA5_data =====")
+
+    if mode == "month":
+        query_year = query.year  # int
+        query_month = query.strftime('%m')  # str
+
+        print("Mode 'month' acknowledged. Will download data for month", query.month, "/", query.year)
+        print("Please note that the last available date on AgERA5 should be", dt.today() - datetime.timedelta(days=8))
+
+    elif mode == "year":
+        query_year = query.year
+
+        print("Mode 'year' acknowledged. Will download data for year", query.year)
+        print("Please note that the last available date on AgERA5 should be", (dt.today() - datetime.timedelta(days=8)).date())
+
+    else:
+        raise Exception("The mode passed (" + mode + ") is incorrect. Please use either 'month' or 'year'.")
+
+    c = cdsapi.Client()
+
+    if not os.path.exists(os.path.join(save_path, "0_downloads/")):
+        os.makedirs(os.path.join(save_path, "0_downloads/"))
+
+    for variable in variables:
+        request = {
+            'format': 'zip',
+            'day': [
+                '01', '02', '03',
+                '04', '05', '06',
+                '07', '08', '09',
+                '10', '11', '12',
+                '13', '14', '15',
+                '16', '17', '18',
+                '19', '20', '21',
+                '22', '23', '24',
+                '25', '26', '27',
+                '28', '29', '30',
+                '31',
+            ],
+            'year': [str(query_year)],
+            'variable': variable[0],
+            'statistic': variable[1],
+            'area': area[selected_area],
+            'version': '1_1',
+        }
 
         if mode == "month":
-            zip_path = os.path.join(save_path,'0_downloads/AgERA5_'+selected_area+'_'+variable[0]+'_'+variable[1]+"_"+str(query_year)+'_'+query_month+'.zip')
+            zip_path = os.path.join(save_path, '0_downloads/AgERA5_' + selected_area + '_' + variable[0] + '_' + variable[1] + "_" + str(query_year) + '_' + query_month + '.zip')
             request["month"] = query_month
 
-        if mode == "year": 
-            zip_path = os.path.join(save_path,'0_downloads/AgERA5_'+selected_area+'_'+variable[0]+'_'+variable[1]+"_"+str(query_year)+'.zip')
+        if mode == "year":
+            zip_path = os.path.join(save_path, '0_downloads/AgERA5_' + selected_area + '_' + variable[0] + '_' + variable[1] + "_" + str(query_year) + '.zip')
             request["month"] = [
                 '01', '02', '03',
                 '04', '05', '06',
@@ -82,19 +166,26 @@ def download_AgERA5_data(area, selected_area, variables, mode="month", query=dt.
                 '10', '11', '12',
             ]
 
-        # la requête doit être adaptée pour cette variable
-        if variable[0] == "solar_radiation_flux" :
+        # Special case for "solar_radiation_flux"
+        if variable[0] == "solar_radiation_flux":
             del request["statistic"]
 
-        c.retrieve(
-            'sis-agrometeorological-indicators',
-            request,
-            zip_path)
+        # Check if the file already exists
+        if os.path.exists(zip_path):
+            print(f"File {zip_path} already exists. Skipping download.")
+            continue
 
-        print("Download OK")
+        # Perform the download
+        try:
+            c.retrieve(
+                'sis-agrometeorological-indicators',
+                request,
+                zip_path
+            )
+            print(f"Download completed: {zip_path}")
+        except Exception as e:
+            print(f"Download failed for {zip_path}. Error: {e}")
 
-    # except :
-    #     print("/!\ Download NOT OK")
 
 
 
@@ -415,7 +506,7 @@ variables = [
 
 def download_AgERA5_year(query_year, area, selected_area, save_path, version):
     query_date = datetime.date(query_year,1,1)
-    download_AgERA5_data(area, selected_area, variables, mode="year", query=query_date)
+    download_AgERA5_data_alt(area, selected_area, variables, mode="year", query=query_date)
     extract_AgERA5_data(area, selected_area, variables, mode="year", query=query_date)
     convert_AgERA5_netcdf_to_geotiff(area, selected_area, variables, query=query_date) 
     calculate_AgERA5_ET0_and_save(area, selected_area, variables, query=query_date, version=version)
